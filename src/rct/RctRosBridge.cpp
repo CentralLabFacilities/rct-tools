@@ -56,7 +56,6 @@ public:
         while (!queue.push(wrappedTransform)) {
             TransformWrapper discardedTransform;
             queue.pop(discardedTransform);
-	    delete discardedTransform;
         }
     }
 private:
@@ -109,6 +108,7 @@ private:
                 } else {
                     RSCDEBUG(logger, "ignored transform due to authority!");
                 }
+		delete transform.transform;
             }
 
             numTransformsRelayed += dynamicTransforms.size();
