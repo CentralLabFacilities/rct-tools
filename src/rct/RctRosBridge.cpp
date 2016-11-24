@@ -109,7 +109,6 @@ private:
                 } else {
                     RSCDEBUG(logger, "ignored transform due to authority!");
                 }
-                delete transform.transform;
             }
 
             numTransformsRelayed += dynamicTransforms.size();
