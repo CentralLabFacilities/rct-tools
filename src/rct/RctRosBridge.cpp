@@ -27,9 +27,9 @@ using namespace std;
 using namespace rct;
 using namespace rsc::misc;
 
-struct TransformWrapper {
+class TransformWrapper {
 public:
-    Transform* transform;
+    Transform *transform;
     bool isStatic;
 };
 
@@ -99,16 +99,16 @@ private:
             while (queue.pop(transform)) {
                 if (transform.transform->getAuthority() != fromCommunicator->getAuthorityName()) {
                     if (transform.isStatic) {
-                        staticTransforms.push_back(*transform.transform);
+//                        staticTransforms.push_back(*transform.transform);
 //                        toCommunicator->sendTransform(staticTransforms.back(), rct::STATIC);
                     } else {
-                        dynamicTransforms.push_back(*transform.transform);
+//                        dynamicTransforms.push_back(*transform.transform);
 //                        toCommunicator->sendTransform(dynamicTransforms.back(), rct::DYNAMIC);
                     }
                 } else {
                     RSCDEBUG(logger, "ignored transform due to authority!");
                 }
-                delete transform.transform;
+//                delete transform.transform;
             }
 
             numTransformsRelayed += dynamicTransforms.size();
