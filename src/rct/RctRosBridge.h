@@ -16,14 +16,6 @@ namespace rct {
 
 class RctRosBridge;
 
-class TransformWrapper: public Transform {
-public:
-	TransformWrapper(const Transform& t, bool isStatic) :
-			Transform(t), isStatic(isStatic) {
-	}
-	bool isStatic;
-};
-
 class Handler: public TransformListener {
 public:
 	typedef boost::shared_ptr<Handler> Ptr;

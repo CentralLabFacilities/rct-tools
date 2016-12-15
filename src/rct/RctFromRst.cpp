@@ -65,11 +65,11 @@ void handlePose(boost::shared_ptr<Pose> p, ParserResultMessage message, boost::u
 	Eigen::Quaterniond rotation(qw,qx,qy,qz);
 	Eigen::Affine3d affine = Eigen::Affine3d().fromPositionOrientationScale(translation, rotation,
 						Eigen::Vector3d::Ones());
-	rct::Transform transform(affine, message.parent, message.child, time);
+	rct::Transform transform(affine, message.parent, message.child, time, rct::DYNAMIC);
 	transform.setAuthority(message.authority);
 
 	// publish the transform
-	publisher->sendTransform(transform, rct::DYNAMIC);
+	publisher->sendTransform(transform);
 }
 
 void handleEvent(EventPtr e) {

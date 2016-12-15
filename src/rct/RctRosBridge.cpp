@@ -13,7 +13,7 @@
 
 #include <cstdlib>
 
-#include <boost/lockfree/queue.hpp>
+#include <boost/lockfree/spsc_queue.hpp>
 #include <boost/date_time/posix_time/ptime.hpp>
 
 #include <rsc/logging/Logger.h>
@@ -27,18 +27,12 @@ using namespace std;
 using namespace rct;
 using namespace rsc::misc;
 
-class TransformWrapper {
-public:
-    Transform* transform;
-    bool isStatic;
-};
-
-template <class queue_t>
+template <class T>
 class Handler : public TransformListener {
 public:
-    typedef boost::shared_ptr< Handler<queue_t> > Ptr;
+    typedef boost::shared_ptr< Handler<T> > Ptr;
 
-    Handler(queue_t& queue, std::string authorityToIgnore) :
+    Handler(T& queue, std::string authorityToIgnore) :
     queue(queue), logger(rsc::logging::Logger::getLogger("rct.anotherrctrosbridge.Handler")),
     authorityToIgnore(authorityToIgnore) {
     }
@@ -46,29 +40,25 @@ public:
     virtual ~Handler() {
     }
 
-    void newTransformAvailable(const Transform& transform, bool isStatic) {
-
-        TransformWrapper wrappedTransform;
-
-        wrappedTransform.isStatic = isStatic;
-        wrappedTransform.transform = new Transform(transform);
-
-        while (!queue.push(wrappedTransform)) {
-            TransformWrapper discardedTransform;
-            queue.pop(discardedTransform);
-        }
+    void newTransformAvailable(const Transform& transform) {
+	while (!queue.push(transform)) {
+           Transform discardedTransform;
+           queue.pop(discardedTransform);
+	}
     }
 private:
     std::string authorityToIgnore;
-    queue_t& queue;
+    T& queue;
     rsc::logging::LoggerPtr logger;
 };
 
-template<int timeBeweenTicksMS = 20, int queueBounds = 10000 >
+
+
+template<int timeBeweenTicksMS = 20, int queueBounds = 1000 >
 class CommunicatorConnector {
 public:
-    typedef boost::lockfree::queue< TransformWrapper, boost::lockfree::capacity<queueBounds> > queue_t;
-
+    typedef boost::lockfree::spsc_queue< rct::Transform, boost::lockfree::capacity<queueBounds> > queue_t;
+    
     CommunicatorConnector(TransformCommunicator::Ptr fromCommunicator, TransformCommunicator::Ptr toCommunicator,
             std::string logname) :
     fromCommunicator(fromCommunicator), toCommunicator(toCommunicator),
@@ -94,21 +84,19 @@ private:
             
             vector<Transform> dynamicTransforms;
             vector<Transform> staticTransforms;
+Transform transform;
 
-            TransformWrapper transform;
             while (queue.pop(transform)) {
-                if (transform.transform->getAuthority() != fromCommunicator->getAuthorityName()) {
-                    if (transform.isStatic) {
-                       staticTransforms.push_back(*transform.transform);
-//                        toCommunicator->sendTransform(staticTransforms.back(), rct::STATIC);
+
+                if (transform.getAuthority() != fromCommunicator->getAuthorityName()) {
+                    if (transform.getTransformType() == rct::STATIC) {
+                       staticTransforms.push_back(transform);
                     } else {
-                        dynamicTransforms.push_back(*transform.transform);
-//                        toCommunicator->sendTransform(dynamicTransforms.back(), rct::DYNAMIC);
+                        dynamicTransforms.push_back(transform);
                     }
                 } else {
                     RSCDEBUG(logger, "ignored transform due to authority!");
                 }
-		delete transform.transform;
             }
 
             numTransformsRelayed += dynamicTransforms.size();
@@ -116,11 +104,11 @@ private:
 
             if (dynamicTransforms.size() > 0) {
                 RSCTRACE(logger, boost::str(boost::format("Sending %1% dynamic transforms!") % dynamicTransforms.size()));
-                toCommunicator->sendTransform(dynamicTransforms, rct::DYNAMIC);
+                toCommunicator->sendTransform(dynamicTransforms);
             }
             if (staticTransforms.size() > 0) {
                 RSCTRACE(logger, boost::str(boost::format("Sending %1% static transforms!") % staticTransforms.size()));
-                toCommunicator->sendTransform(staticTransforms, rct::STATIC);
+                toCommunicator->sendTransform(staticTransforms);
             }
 
             nextTickTime += boost::posix_time::millisec(timeBeweenTicksMS);
@@ -138,12 +126,10 @@ private:
     boost::posix_time::ptime nextTickTime;
 };
 
-/*
- * 
- */
 int main(int argc, char** argv) {
+
     ros::init(argc, argv, "rctrosbridge");
-    ros::AsyncSpinner spinner(4);
+    ros::AsyncSpinner spinner(1); //spsc_queue allows only one producer
     spinner.start();
 
     initSignalWaiter();

@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 			RSCERROR(logger, "no transforms to publish")
 		} else {
 			cout << "successfully started" << endl;
-			publisher->sendTransform(result.transforms, rct::STATIC);
+			publisher->sendTransform(result.transforms);
 		}
 
 		// run until interrupted

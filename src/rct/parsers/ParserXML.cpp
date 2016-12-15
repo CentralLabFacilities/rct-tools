@@ -113,7 +113,7 @@ ParserResultTransforms ParserXML::parseStaticTransforms(const string& file) {
 			Eigen::Quaterniond r = rollAngle * yawAngle * pitchAngle;
 			Eigen::Affine3d a = Eigen::Affine3d().fromPositionOrientationScale(translation, r,
 					Eigen::Vector3d::Ones());
-			Transform t(a, parent, child, boost::posix_time::microsec_clock::universal_time());
+			Transform t(a, parent, child, boost::posix_time::microsec_clock::universal_time(), rct::STATIC);
 			RSCDEBUG(logger, "parsed transform: " << t);
 			transforms.push_back(t);
 			continue;
@@ -129,7 +129,7 @@ ParserResultTransforms ParserXML::parseStaticTransforms(const string& file) {
 			Eigen::Quaterniond r(qw.get(), qx.get(), qy.get(), qz.get());
 			Eigen::Affine3d a = Eigen::Affine3d().fromPositionOrientationScale(translation, r,
 					Eigen::Vector3d::Ones());
-			Transform t(a, parent, child, boost::posix_time::microsec_clock::universal_time());
+			Transform t(a, parent, child, boost::posix_time::microsec_clock::universal_time(), rct::STATIC);
 			RSCDEBUG(logger, "parsed transform: " << t);
 			transforms.push_back(t);
 			continue;
